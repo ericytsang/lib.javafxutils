@@ -204,7 +204,7 @@ abstract class EditableListView<Model,InputDialog:Dialog<ResultType>,ResultType>
             val alert = Alert(Alert.AlertType.ERROR)
             alert.title = "Remove Existing Entry"
             alert.headerText = "Unable to remove entry"
-            alert.contentText = ex.message
+            alert.contentText = "${ex.javaClass.simpleName}: ${ex.message}"
             alert.showAndWait()
         }
     }
@@ -282,7 +282,7 @@ abstract class EditableListView<Model,InputDialog:Dialog<ResultType>,ResultType>
                 val alert = Alert(Alert.AlertType.ERROR)
                 alert.title = "Edit Existing Entry"
                 alert.headerText = "Invalid input format"
-                alert.contentText = ex.message
+                alert.contentText = "${ex.javaClass.simpleName}: ${ex.message}"
                 alert.showAndWait()
 
                 // try to get input from user again again
@@ -301,7 +301,7 @@ abstract class EditableListView<Model,InputDialog:Dialog<ResultType>,ResultType>
                 val alert = Alert(Alert.AlertType.ERROR)
                 alert.title = "Edit Existing Entry"
                 alert.headerText = "Unable to update entry"
-                alert.contentText = ex.message
+                alert.contentText = "${ex.javaClass.simpleName}: ${ex.message}"
                 alert.showAndWait()
 
                 // try to get input from user again again
@@ -364,7 +364,7 @@ abstract class EditableListView<Model,InputDialog:Dialog<ResultType>,ResultType>
                 val alert = Alert(Alert.AlertType.ERROR)
                 alert.title = "Add New Entry"
                 alert.headerText = "Invalid input format"
-                alert.contentText = ex.message
+                alert.contentText = "${ex.javaClass.simpleName}: ${ex.message}"
                 alert.showAndWait()
 
                 // try to get input from user again again
@@ -384,8 +384,8 @@ abstract class EditableListView<Model,InputDialog:Dialog<ResultType>,ResultType>
                 // constraints not satisfied
                 val alert = Alert(Alert.AlertType.ERROR)
                 alert.title = "Add New Entry"
-                alert.headerText = "Constraint error"
-                alert.contentText = ex.message
+                alert.headerText = "Unable to add entry"
+                alert.contentText = "${ex.javaClass.simpleName}: ${ex.message}"
                 alert.showAndWait()
 
                 // try to get input from user again again
