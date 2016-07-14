@@ -1,17 +1,13 @@
 package com.github.ericytsang.lib.javafxutils
 
-import javafx.beans.InvalidationListener
 import javafx.event.EventHandler
 import javafx.scene.control.Alert
 import javafx.scene.control.ContextMenu
 import javafx.scene.control.Dialog
-import javafx.scene.control.ListCell
 import javafx.scene.control.ListView
 import javafx.scene.control.MenuItem
 import javafx.scene.control.SeparatorMenuItem
-import javafx.scene.control.cell.TextFieldListCell
 import javafx.scene.input.KeyCode
-import javafx.util.Callback
 import java.awt.Toolkit
 import java.util.Optional
 
