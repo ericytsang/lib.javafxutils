@@ -4,6 +4,7 @@ import javafx.event.EventHandler
 import javafx.scene.control.Alert
 import javafx.scene.control.ContextMenu
 import javafx.scene.control.Dialog
+import javafx.scene.control.Label
 import javafx.scene.control.ListView
 import javafx.scene.control.MenuItem
 import javafx.scene.control.SeparatorMenuItem
@@ -40,6 +41,8 @@ abstract class EditableListView<Model,InputDialog:Dialog<ResultType>,ResultType>
 
     init
     {
+        placeholder = Label("No entries in list. Right-click for more options.")
+
         onMouseClicked = EventHandler()
         {
             event ->
@@ -217,6 +220,7 @@ abstract class EditableListView<Model,InputDialog:Dialog<ResultType>,ResultType>
             items.removeAt(positionToRemoveFrom)
             items.add(positionToMoveTo,itemToMove)
             selectionModel.select(positionToMoveTo)
+            scrollTo(positionToMoveTo)
         }
         catch (ex:Exception)
         {
@@ -235,6 +239,7 @@ abstract class EditableListView<Model,InputDialog:Dialog<ResultType>,ResultType>
             items.removeAt(positionToRemoveFrom)
             items.add(positionToMoveTo,itemToMove)
             selectionModel.select(positionToMoveTo)
+            scrollTo(positionToMoveTo)
         }
         catch (ex:Exception)
         {
@@ -371,6 +376,7 @@ abstract class EditableListView<Model,InputDialog:Dialog<ResultType>,ResultType>
             {
                 tryAddToListAt(items,index,entry)
                 selectionModel.select(index)
+                scrollTo(index)
                 break
             }
             catch (ex:Exception)
