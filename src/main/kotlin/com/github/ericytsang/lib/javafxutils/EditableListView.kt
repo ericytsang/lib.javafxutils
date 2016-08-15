@@ -5,9 +5,9 @@ import javafx.event.EventHandler
 import javafx.scene.control.Alert
 import javafx.scene.control.ContextMenu
 import javafx.scene.control.Label
+import javafx.scene.control.ListView
 import javafx.scene.control.MenuItem
 import javafx.scene.control.SeparatorMenuItem
-import javafx.scene.control.TableView
 import javafx.scene.input.KeyCode
 import java.awt.Toolkit
 import java.util.ArrayList
@@ -18,7 +18,7 @@ import java.util.ArrayList
  *
  * items within the [ListView] may also be modified programmatically.
  */
-abstract class EditableTableView<Item:Any>:TableView<Item>()
+abstract class EditableListView<Item:Any>:ListView<Item>()
 {
     /**
      * return null if the operation was cancelled by the user; returns an [Item]
