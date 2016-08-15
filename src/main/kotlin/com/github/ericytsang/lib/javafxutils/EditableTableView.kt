@@ -1,5 +1,6 @@
 package com.github.ericytsang.lib.javafxutils
 
+import com.sun.javafx.collections.ObservableListWrapper
 import javafx.event.EventHandler
 import javafx.scene.control.Alert
 import javafx.scene.control.ContextMenu
@@ -10,6 +11,7 @@ import javafx.scene.control.SeparatorMenuItem
 import javafx.scene.control.TableView
 import javafx.scene.input.KeyCode
 import java.awt.Toolkit
+import java.util.ArrayList
 import java.util.Optional
 
 /**
@@ -18,26 +20,20 @@ import java.util.Optional
  *
  * items within the [ListView] may also be modified programmatically.
  */
-abstract class EditableTableView<Model,InputDialog:Dialog<ResultType>,ResultType>:TableView<Model>()
+abstract class EditableTableView<Item:Any>:TableView<Item>()
 {
-    protected abstract fun tryParseInput(inputDialog:InputDialog):Model
-    protected abstract fun makeInputDialog(model:Model?):InputDialog
-    protected abstract fun isInputCancelled(result:Optional<ResultType>):Boolean
+    /**
+     * return null if the operation was cancelled by the user; returns an [Item]
+     * created as per user input otherwise.
+     */
+    protected abstract fun createItem(previousInput:Item?):Item?
 
-    protected open fun tryAddToListAt(existingEntries:MutableList<Model>,indexOfEntry:Int,newEntry:Model)
-    {
-        existingEntries.add(indexOfEntry,newEntry)
-    }
-
-    protected open fun tryRemoveFromListAt(existingEntries:MutableList<Model>,indexOfEntry:Int)
-    {
-        existingEntries.removeAt(indexOfEntry)
-    }
-
-    protected open fun tryUpdateListAt(existingEntries:MutableList<Model>,indexOfEntry:Int,newEntry:Model)
-    {
-        existingEntries[indexOfEntry] = newEntry
-    }
+    /**
+     * returns an empty list if [items] is a consistent list; returns a list of
+     * strings. each string should describe a constraint that was violated by
+     * [items]. these messages will be displayed to the user via an alert box.
+     */
+    protected open fun isConsistent(items:List<Item>):List<String> = emptyList()
 
     init
     {
@@ -187,25 +183,30 @@ abstract class EditableTableView<Model,InputDialog:Dialog<ResultType>,ResultType
 
     private fun remoteFocusedItem()
     {
-        try
-        {
-            focusModel.focusedItem ?: throw IllegalStateException("no item in focus")
-        }
-        catch (ex:Exception)
+        if (focusModel.focusedItem == null)
         {
             Toolkit.getDefaultToolkit().beep()
         }
-        try
+        else
         {
-            tryRemoveFromListAt(items,focusModel.focusedIndex)
-        }
-        catch (ex:Exception)
-        {
-            val alert = Alert(Alert.AlertType.ERROR)
-            alert.title = "Remove Existing Entry"
-            alert.headerText = "Unable to remove entry"
-            alert.contentText = "${ex.javaClass.simpleName}: ${ex.message}"
-            alert.showAndWait()
+            val testItems = ArrayList(items)
+                .apply()
+                {
+                    removeAt(focusModel.focusedIndex)
+                }
+
+            val errorMessages = isConsistent(testItems)
+            if (errorMessages.isEmpty())
+            {
+                items.removeAt(focusModel.focusedIndex)
+            }
+            else
+            {
+                val errorMessage = errorMessages.joinToString(
+                    prefix = "The operation would have violated the following constraints:\n    - ",
+                    separator = "\n    - ")
+                showError("Remove Entry","Unable to remove entry.",errorMessage)
+            }
         }
     }
 
@@ -217,10 +218,25 @@ abstract class EditableTableView<Model,InputDialog:Dialog<ResultType>,ResultType
             val positionToMoveTo = focusModel.focusedIndex-1
             if (positionToMoveTo !in items.indices) throw IndexOutOfBoundsException()
             val positionToRemoveFrom = focusModel.focusedIndex
-            items.removeAt(positionToRemoveFrom)
-            items.add(positionToMoveTo,itemToMove)
-            selectionModel.select(positionToMoveTo)
-            scrollTo(positionToMoveTo)
+
+            val testItems = ArrayList(items)
+            testItems.removeAt(positionToRemoveFrom)
+            testItems.add(positionToMoveTo,itemToMove)
+
+            val errorMessages = isConsistent(testItems)
+            if (errorMessages.isEmpty())
+            {
+                items = ObservableListWrapper(testItems)
+                selectionModel.select(positionToMoveTo)
+                scrollTo(positionToMoveTo)
+            }
+            else
+            {
+                val errorMessage = errorMessages.joinToString(
+                    prefix = "The operation would have violated the following constraints:\n    - ",
+                    separator = "\n    - ")
+                showError("Update Entry","Unable to update entry.",errorMessage)
+            }
         }
         catch (ex:Exception)
         {
@@ -236,10 +252,25 @@ abstract class EditableTableView<Model,InputDialog:Dialog<ResultType>,ResultType
             val positionToMoveTo = focusModel.focusedIndex+1
             if (positionToMoveTo !in items.indices) throw IndexOutOfBoundsException()
             val positionToRemoveFrom = focusModel.focusedIndex
-            items.removeAt(positionToRemoveFrom)
-            items.add(positionToMoveTo,itemToMove)
-            selectionModel.select(positionToMoveTo)
-            scrollTo(positionToMoveTo)
+
+            val testItems = ArrayList(items)
+            testItems.removeAt(positionToRemoveFrom)
+            testItems.add(positionToMoveTo,itemToMove)
+
+            val errorMessages = isConsistent(testItems)
+            if (errorMessages.isEmpty())
+            {
+                items = ObservableListWrapper(testItems)
+                selectionModel.select(positionToMoveTo)
+                scrollTo(positionToMoveTo)
+            }
+            else
+            {
+                val errorMessage = errorMessages.joinToString(
+                    prefix = "The operation would have violated the following constraints:\n    - ",
+                    separator = "\n    - ")
+                showError("Update Entry","Unable to update entry.",errorMessage)
+            }
         }
         catch (ex:Exception)
         {
@@ -252,60 +283,35 @@ abstract class EditableTableView<Model,InputDialog:Dialog<ResultType>,ResultType
         if (focusModel.focusedItem == null)
         {
             Toolkit.getDefaultToolkit().beep()
-            return
         }
-        val inputDialog = makeInputDialog(focusModel.focusedItem)
-        while (true)
+        else
         {
-            // show input dialog to get input from user
-            val result = inputDialog
-                .apply {title = "Edit Existing Entry"}
-                .showAndWait()
+            var toUpdate:Item = focusModel.focusedItem
 
-            // break if input is cancelled
-            if (isInputCancelled(result))
+            while (true)
             {
-                break
-            }
+                toUpdate = createItem(toUpdate) ?: focusModel.focusedItem
+                val testItems = ArrayList(items)
+                    .apply()
+                    {
+                        set(focusModel.focusedIndex,toUpdate)
+                    }
 
-            // try to parse input
-            val entry = try
-            {
-                tryParseInput(inputDialog)
-            }
-
-            // there was an exception while parsing the result...show error
-            // then try to get the input again
-            catch (ex:Exception)
-            {
-                // input format is invalid
-                val alert = Alert(Alert.AlertType.ERROR)
-                alert.title = "Edit Existing Entry"
-                alert.headerText = "Invalid input format"
-                alert.contentText = "${ex.javaClass.simpleName}: ${ex.message}"
-                alert.showAndWait()
-
-                // try to get input from user again again
-                continue
-            }
-
-            // try to add the entry to the list
-            try
-            {
-                tryUpdateListAt(items,focusModel.focusedIndex,entry)
-                break
-            }
-            catch (ex:Exception)
-            {
-                // constraints not satisfied
-                val alert = Alert(Alert.AlertType.ERROR)
-                alert.title = "Edit Existing Entry"
-                alert.headerText = "Unable to update entry"
-                alert.contentText = "${ex.javaClass.simpleName}: ${ex.message}"
-                alert.showAndWait()
-
-                // try to get input from user again again
-                continue
+                val errorMessages = isConsistent(testItems)
+                if (errorMessages.isEmpty())
+                {
+                    val updateIndex = focusModel.focusedIndex
+                    items[focusModel.focusedIndex] = toUpdate
+                    selectionModel.select(updateIndex)
+                    break
+                }
+                else
+                {
+                    val errorMessage = errorMessages.joinToString(
+                        prefix = "The operation would have violated the following constraints:\n    - ",
+                        separator = "\n    - ")
+                    showError("Update Entry","Unable to update entry.",errorMessage)
+                }
             }
         }
     }
@@ -336,61 +342,40 @@ abstract class EditableTableView<Model,InputDialog:Dialog<ResultType>,ResultType
 
     private fun addNewEntryAt(index:Int)
     {
-        val inputDialog = makeInputDialog(null)
+        var newItem:Item? = null
+
         while (true)
         {
-            // show text input dialog to get input from user
-            val result = inputDialog
-                .apply {title = "Add New Entry"}
-                .showAndWait()
+            newItem = createItem(newItem) ?: return
+            val testItems = ArrayList(items)
+                .apply()
+                {
+                    add(index,newItem)
+                }
 
-            // break if input is cancelled
-            if (isInputCancelled(result))
+            val errorMessages = isConsistent(testItems)
+            if (errorMessages.isEmpty())
             {
-                break
-            }
-
-            // try to parse input
-            val entry = try
-            {
-                tryParseInput(inputDialog)
-            }
-
-            // there was an exception while parsing the result...show error
-            // then try to get the input again
-            catch (ex:Exception)
-            {
-                // input format is invalid
-                val alert = Alert(Alert.AlertType.ERROR)
-                alert.title = "Add New Entry"
-                alert.headerText = "Invalid input format"
-                alert.contentText = "${ex.javaClass.simpleName}: ${ex.message}"
-                alert.showAndWait()
-
-                // try to get input from user again again
-                continue
-            }
-
-            // try to add the entry to the list
-            try
-            {
-                tryAddToListAt(items,index,entry)
+                items.add(index,newItem)
                 selectionModel.select(index)
-                scrollTo(index)
                 break
             }
-            catch (ex:Exception)
+            else
             {
-                // constraints not satisfied
-                val alert = Alert(Alert.AlertType.ERROR)
-                alert.title = "Add New Entry"
-                alert.headerText = "Unable to add entry"
-                alert.contentText = "${ex.javaClass.simpleName}: ${ex.message}"
-                alert.showAndWait()
-
-                // try to get input from user again again
-                continue
+                val errorMessage = errorMessages.joinToString(
+                    prefix = "The operation would have violated the following constraints:\n    - ",
+                    separator = "\n    - ")
+                showError("Create Entry","Unable to create entry.",errorMessage)
             }
         }
+    }
+
+    private fun showError(title:String,header:String,body:String)
+    {
+        val alert = Alert(Alert.AlertType.ERROR)
+        alert.title = title
+        alert.headerText = header
+        alert.contentText = body
+        alert.showAndWait()
     }
 }

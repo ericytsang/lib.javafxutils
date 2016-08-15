@@ -25,8 +25,43 @@ class EditableTableViewTest:Application()
 
     override fun start(primaryStage:Stage)
     {
-        val editableTableView = object:EditableTableView<String,TextInputDialog,String>()
+        val editableTableView = object:EditableTableView<String>()
         {
+            override fun createItem(previousInput:String?):String?
+            {
+                val result = TextInputDialog(previousInput).showAndWait()
+                if (result.isPresent)
+                {
+                    return result.get()
+                }
+                else
+                {
+                    return null
+                }
+            }
+
+            override fun isConsistent(items:List<String>):List<String>
+            {
+                val violatedConstraints = mutableListOf<String>()
+
+                if (items.toSet().size != items.size)
+                {
+                    violatedConstraints += "all entries must be unique"
+                }
+
+                if (this.items.contains("noremove") && !items.contains("noremove"))
+                {
+                    violatedConstraints += "cannot remove the \"noremove\" entry"
+                }
+
+//                if (items.sorted() != items)
+//                {
+//                    violatedConstraints += "entries must be kept in alphabetical order"
+//                }
+
+                return violatedConstraints
+            }
+
             init
             {
                 columns.add(TableColumn<String,String>().apply()
@@ -47,28 +82,6 @@ class EditableTableViewTest:Application()
                 })
             }
 
-            override fun isInputCancelled(result:Optional<String>):Boolean
-            {
-                return !result.isPresent
-            }
-
-            override fun tryParseInput(inputDialog:TextInputDialog):String
-            {
-                if (inputDialog.result == "hello")
-                {
-                    throw IllegalArgumentException("input cannot be \"${inputDialog.result}\".")
-                }
-                return inputDialog.result
-            }
-
-            override fun makeInputDialog(model:String?):TextInputDialog
-            {
-                return TextInputDialog(model)
-                    .apply()
-                    {
-                        headerText = "Enter the sentence below."
-                    }
-            }
         }
 
         primaryStage.scene = Scene(editableTableView,800.0,500.0)
