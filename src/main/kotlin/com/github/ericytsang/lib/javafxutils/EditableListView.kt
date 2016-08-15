@@ -24,7 +24,7 @@ abstract class EditableListView<Item:Any>:ListView<Item>()
      * return null if the operation was cancelled by the user; returns an [Item]
      * created as per user input otherwise.
      */
-    protected abstract fun createItem(previousInput:Item?):Item?
+    protected abstract fun createOrUpdateItem(previousInput:Item?):Item?
 
     /**
      * returns an empty list if [items] is a consistent list; returns a list of
@@ -288,7 +288,7 @@ abstract class EditableListView<Item:Any>:ListView<Item>()
 
             while (true)
             {
-                toUpdate = createItem(toUpdate) ?: focusModel.focusedItem
+                toUpdate = createOrUpdateItem(toUpdate) ?: focusModel.focusedItem
                 val testItems = ArrayList(items)
                     .apply()
                     {
@@ -344,7 +344,7 @@ abstract class EditableListView<Item:Any>:ListView<Item>()
 
         while (true)
         {
-            newItem = createItem(newItem) ?: return
+            newItem = createOrUpdateItem(newItem) ?: return
             val testItems = ArrayList(items)
                 .apply()
                 {

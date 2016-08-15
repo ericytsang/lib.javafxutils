@@ -27,7 +27,7 @@ class EditableTableViewTest:Application()
     {
         val editableTableView = object:EditableTableView<String>()
         {
-            override fun createItem(previousInput:String?):String?
+            override fun createOrUpdateItem(previousInput:String?):String?
             {
                 val result = TextInputDialog(previousInput).showAndWait()
                 if (result.isPresent)
