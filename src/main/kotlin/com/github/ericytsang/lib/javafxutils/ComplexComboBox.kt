@@ -42,4 +42,9 @@ class ComplexComboBox<Option:ComplexComboBox.OptionalBuilder<Product>,Product>:V
 
         fun configureBuilderFrom(product:Product)
     }
+
+    init
+    {
+        children += comboBox
+    }
 }
