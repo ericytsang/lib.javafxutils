@@ -15,12 +15,12 @@ class ComplexComboBox<Option:ComplexComboBox.OptionalBuilder<Product>,Product>:V
         {
             observableValue,oldValue,newValue ->
 
-            if (oldValue.panel != null)
+            if (oldValue?.panel != null)
             {
                 this@ComplexComboBox.children.remove(oldValue.panel)
             }
 
-            if (newValue.panel != null)
+            if (newValue?.panel != null)
             {
                 this@ComplexComboBox.children.add(newValue.panel)
             }
