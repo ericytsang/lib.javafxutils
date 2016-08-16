@@ -1,5 +1,8 @@
 package com.github.ericytsang.lib.javafxutils
 
+import com.github.ericytsang.lib.collections.ConstrainedList
+import com.github.ericytsang.lib.collections.SimpleConstraint
+import com.sun.javafx.collections.ObservableListWrapper
 import javafx.application.Application
 import javafx.beans.property.ObjectProperty
 import javafx.beans.property.SimpleObjectProperty
@@ -10,7 +13,9 @@ import javafx.scene.control.TextInputDialog
 import javafx.stage.Stage
 import javafx.util.Callback
 import org.junit.Test
+import java.util.ArrayList
 import java.util.Optional
+import java.util.function.Predicate
 
 /**
  * Created by surpl on 7/14/2016.
@@ -40,46 +45,35 @@ class EditableTableViewTest:Application()
                 }
             }
 
-            override fun isConsistent(items:List<String>):List<String>
-            {
-                val violatedConstraints = mutableListOf<String>()
-
-                if (items.toSet().size != items.size)
-                {
-                    violatedConstraints += "all entries must be unique"
-                }
-
-                if (this.items.contains("noremove") && !items.contains("noremove"))
-                {
-                    violatedConstraints += "cannot remove the \"noremove\" entry"
-                }
-
-//                if (items.sorted() != items)
-//                {
-//                    violatedConstraints += "entries must be kept in alphabetical order"
-//                }
-
-                return violatedConstraints
-            }
-
             init
             {
-                columns.add(TableColumn<String,String>().apply()
+                items = ObservableListWrapper(ConstrainedList(ArrayList<String>()).apply()
                 {
-                    text = "First word"
-                    cellValueFactory = Callback<TableColumn.CellDataFeatures<String,String>,ObservableValue<String>>()
+                    constraints += SimpleConstraint<List<String>>().apply()
                     {
-                        SimpleObjectProperty<String>(it.value.split(' ').first())
+                        isConsistent = Predicate {change -> change.newValue.toSet().size == change.newValue.size}
+                        description = "all entries must be unique"
+                    }
+                    constraints += SimpleConstraint<List<String>>().apply()
+                    {
+                        isConsistent = Predicate {change -> !change.oldValue.contains("noremove") || change.newValue.contains("noremove")}
+                        description = "noremove cannot be removed"
+                    }
+                    constraints += SimpleConstraint<List<String>>().apply()
+                    {
+                        isConsistent = Predicate {change -> change.newValue.sorted() == change.newValue}
+                        description = "must be in alphabetical order"
                     }
                 })
-                columns.add(TableColumn<String,String>().apply()
+
+                columns += TableColumn<String,String>().apply()
                 {
                     text = "Everything"
                     cellValueFactory = Callback<TableColumn.CellDataFeatures<String,String>,ObservableValue<String>>()
                     {
                         SimpleObjectProperty<String>(it.value)
                     }
-                })
+                }
             }
 
         }

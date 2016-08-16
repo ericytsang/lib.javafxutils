@@ -1,6 +1,5 @@
 package com.github.ericytsang.lib.javafxutils
 
-import com.sun.javafx.collections.ObservableListWrapper
 import javafx.event.EventHandler
 import javafx.scene.control.Alert
 import javafx.scene.control.ContextMenu
@@ -8,8 +7,11 @@ import javafx.scene.control.Label
 import javafx.scene.control.MenuItem
 import javafx.scene.control.SeparatorMenuItem
 import javafx.scene.control.TableView
+import javafx.scene.control.TextArea
 import javafx.scene.input.KeyCode
 import java.awt.Toolkit
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.util.ArrayList
 
 /**
@@ -25,13 +27,6 @@ abstract class EditableTableView<Item:Any>:TableView<Item>()
      * created as per user input otherwise.
      */
     protected abstract fun createOrUpdateItem(previousInput:Item?):Item?
-
-    /**
-     * returns an empty list if [items] is a consistent list; returns a list of
-     * strings. each string should describe a constraint that was violated by
-     * [items]. these messages will be displayed to the user via an alert box.
-     */
-    protected open fun isConsistent(items:List<Item>):List<String> = emptyList()
 
     init
     {
@@ -187,23 +182,13 @@ abstract class EditableTableView<Item:Any>:TableView<Item>()
         }
         else
         {
-            val testItems = ArrayList(items)
-                .apply()
-                {
-                    removeAt(focusModel.focusedIndex)
-                }
-
-            val errorMessages = isConsistent(testItems)
-            if (errorMessages.isEmpty())
+            try
             {
                 items.removeAt(focusModel.focusedIndex)
             }
-            else
+            catch (ex:Exception)
             {
-                val errorMessage = errorMessages.joinToString(
-                    prefix = "The operation would have violated the following constraints:\n    - ",
-                    separator = "\n    - ")
-                showError("Remove Entry","Unable to remove entry.",errorMessage)
+                showError("Remove Entry","Unable to remove entry.",ex)
             }
         }
     }
@@ -212,29 +197,12 @@ abstract class EditableTableView<Item:Any>:TableView<Item>()
     {
         try
         {
-            val itemToMove = focusModel.focusedItem ?: throw IllegalStateException("no item in focus")
+            focusModel.focusedItem ?: throw IllegalStateException("no item in focus")
             val positionToMoveTo = focusModel.focusedIndex-1
             if (positionToMoveTo !in items.indices) throw IndexOutOfBoundsException()
             val positionToRemoveFrom = focusModel.focusedIndex
 
-            val testItems = ArrayList(items)
-            testItems.removeAt(positionToRemoveFrom)
-            testItems.add(positionToMoveTo,itemToMove)
-
-            val errorMessages = isConsistent(testItems)
-            if (errorMessages.isEmpty())
-            {
-                items = ObservableListWrapper(testItems)
-                selectionModel.select(positionToMoveTo)
-                scrollTo(positionToMoveTo)
-            }
-            else
-            {
-                val errorMessage = errorMessages.joinToString(
-                    prefix = "The operation would have violated the following constraints:\n    - ",
-                    separator = "\n    - ")
-                showError("Update Entry","Unable to update entry.",errorMessage)
-            }
+            moveItem(positionToRemoveFrom,positionToMoveTo)
         }
         catch (ex:Exception)
         {
@@ -246,28 +214,43 @@ abstract class EditableTableView<Item:Any>:TableView<Item>()
     {
         try
         {
-            val itemToMove = focusModel.focusedItem ?: throw IllegalStateException("no item in focus")
+            focusModel.focusedItem ?: throw IllegalStateException("no item in focus")
             val positionToMoveTo = focusModel.focusedIndex+1
             if (positionToMoveTo !in items.indices) throw IndexOutOfBoundsException()
             val positionToRemoveFrom = focusModel.focusedIndex
 
-            val testItems = ArrayList(items)
-            testItems.removeAt(positionToRemoveFrom)
-            testItems.add(positionToMoveTo,itemToMove)
+            moveItem(positionToRemoveFrom,positionToMoveTo)
+        }
+        catch (ex:Exception)
+        {
+            Toolkit.getDefaultToolkit().beep()
+        }
+    }
 
-            val errorMessages = isConsistent(testItems)
-            if (errorMessages.isEmpty())
+    private fun moveItem(positionToRemoveFrom:Int,positionToMoveTo:Int)
+    {
+        try
+        {
+            // save original tin case rollback is needed
+            val originalItems = ArrayList(items)
+
+            // try to perform the move operation
+            try
             {
-                items = ObservableListWrapper(testItems)
+                val itemToMove = items[positionToRemoveFrom]
+                items.removeAt(positionToRemoveFrom)
+                items.add(positionToMoveTo,itemToMove)
                 selectionModel.select(positionToMoveTo)
                 scrollTo(positionToMoveTo)
             }
-            else
+
+            // a problem occured, roll back and display an error message
+            catch (ex:Exception)
             {
-                val errorMessage = errorMessages.joinToString(
-                    prefix = "The operation would have violated the following constraints:\n    - ",
-                    separator = "\n    - ")
-                showError("Update Entry","Unable to update entry.",errorMessage)
+                items.clear()
+                items.addAll(originalItems)
+                selectionModel.select(positionToRemoveFrom)
+                showError("Update Entry","Unable to update entry.",ex)
             }
         }
         catch (ex:Exception)
@@ -289,26 +272,16 @@ abstract class EditableTableView<Item:Any>:TableView<Item>()
             while (true)
             {
                 toUpdate = createOrUpdateItem(toUpdate) ?: focusModel.focusedItem
-                val testItems = ArrayList(items)
-                    .apply()
-                    {
-                        set(focusModel.focusedIndex,toUpdate)
-                    }
-
-                val errorMessages = isConsistent(testItems)
-                if (errorMessages.isEmpty())
+                try
                 {
                     val updateIndex = focusModel.focusedIndex
                     items[focusModel.focusedIndex] = toUpdate
                     selectionModel.select(updateIndex)
                     break
                 }
-                else
+                catch (ex:Exception)
                 {
-                    val errorMessage = errorMessages.joinToString(
-                        prefix = "The operation would have violated the following constraints:\n    - ",
-                        separator = "\n    - ")
-                    showError("Update Entry","Unable to update entry.",errorMessage)
+                    showError("Update Entry","Unable to update entry.",ex)
                 }
             }
         }
@@ -345,35 +318,42 @@ abstract class EditableTableView<Item:Any>:TableView<Item>()
         while (true)
         {
             newItem = createOrUpdateItem(newItem) ?: return
-            val testItems = ArrayList(items)
-                .apply()
-                {
-                    add(index,newItem)
-                }
-
-            val errorMessages = isConsistent(testItems)
-            if (errorMessages.isEmpty())
+            try
             {
                 items.add(index,newItem)
                 selectionModel.select(index)
                 break
             }
-            else
+            catch (ex:Exception)
             {
-                val errorMessage = errorMessages.joinToString(
-                    prefix = "The operation would have violated the following constraints:\n    - ",
-                    separator = "\n    - ")
-                showError("Create Entry","Unable to create entry.",errorMessage)
+                showError("Create Entry","Unable to create entry.",ex)
             }
         }
     }
 
-    private fun showError(title:String,header:String,body:String)
+    private fun showError(title:String,header:String,exception:Exception)
     {
         val alert = Alert(Alert.AlertType.ERROR)
         alert.title = title
         alert.headerText = header
-        alert.contentText = body
+        alert.contentText = exception.message
+
+        alert.dialogPane.expandableContent = TextArea().apply()
+        {
+            text = run()
+            {
+                val stringWriter = StringWriter()
+                val printWriter = PrintWriter(stringWriter)
+                exception.printStackTrace(printWriter)
+                val stackTraceString = stringWriter.toString()
+                printWriter.close()
+                stringWriter.close()
+                stackTraceString
+            }
+            isEditable = false
+            isWrapText = true
+        }
+
         alert.showAndWait()
     }
 }
