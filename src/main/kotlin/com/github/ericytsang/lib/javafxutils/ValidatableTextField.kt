@@ -15,7 +15,7 @@ abstract class ValidatableTextField:TextField()
             {
                 override fun validate(text:String):Boolean
                 {
-                    return text.matches(Regex("[0-9]*"))
+                    return text.matches(Regex("-?[0-9]*"))
                 }
             }
         }
