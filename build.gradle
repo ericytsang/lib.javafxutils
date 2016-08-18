@@ -25,8 +25,8 @@ repositories {
 }
 
 dependencies {
-    compile "com.github.ericytsang:lib.collections:master-SNAPSHOT"
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    testCompile "com.github.ericytsang:lib.collections:1.0"
     testCompile "junit:junit:4.11"
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
 }
