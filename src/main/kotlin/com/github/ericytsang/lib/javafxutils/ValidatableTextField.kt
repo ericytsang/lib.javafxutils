@@ -9,13 +9,24 @@ abstract class ValidatableTextField:TextField()
 {
     companion object
     {
-        fun makeNumericTextField():TextField
+        fun makeIntegerTextField():TextField
         {
             return object:ValidatableTextField()
             {
                 override fun validate(text:String):Boolean
                 {
                     return text.matches(Regex("-?[0-9]*"))
+                }
+            }
+        }
+
+        fun makeDecimalTextField():TextField
+        {
+            return object:ValidatableTextField()
+            {
+                override fun validate(text:String):Boolean
+                {
+                    return text.matches(Regex("-?[0-9]*(.[0-9]*)?"))
                 }
             }
         }
