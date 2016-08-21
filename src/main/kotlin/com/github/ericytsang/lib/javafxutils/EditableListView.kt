@@ -229,33 +229,26 @@ abstract class EditableListView<Item:Any>:ListView<Item>()
 
     private fun moveItem(positionToRemoveFrom:Int,positionToMoveTo:Int)
     {
+        // save original tin case rollback is needed
+        val originalItems = ArrayList(items)
+
+        // try to perform the move operation
         try
         {
-            // save original tin case rollback is needed
-            val originalItems = ArrayList(items)
-
-            // try to perform the move operation
-            try
-            {
-                val itemToMove = items[positionToRemoveFrom]
-                items.removeAt(positionToRemoveFrom)
-                items.add(positionToMoveTo,itemToMove)
-                selectionModel.select(positionToMoveTo)
-                scrollTo(positionToMoveTo)
-            }
-
-            // a problem occured, roll back and display an error message
-            catch (ex:Exception)
-            {
-                items.clear()
-                items.addAll(originalItems)
-                selectionModel.select(positionToRemoveFrom)
-                showError("Update Entry","Unable to update entry.",ex)
-            }
+            val itemToMove = items[positionToRemoveFrom]
+            items.removeAt(positionToRemoveFrom)
+            items.add(positionToMoveTo,itemToMove)
+            selectionModel.select(positionToMoveTo)
+            scrollTo(positionToMoveTo)
         }
+
+        // a problem occured, roll back and display an error message
         catch (ex:Exception)
         {
-            Toolkit.getDefaultToolkit().beep()
+            items.clear()
+            items.addAll(originalItems)
+            selectionModel.select(positionToRemoveFrom)
+            showError("Update Entry","Unable to update entry.",ex)
         }
     }
 

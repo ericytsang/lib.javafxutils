@@ -1,10 +1,9 @@
 package com.github.ericytsang.lib.javafxutils
 
 import com.github.ericytsang.lib.collections.ConstrainedList
-import com.github.ericytsang.lib.collections.SimpleConstraint
+import com.github.ericytsang.lib.collections.Constraint
 import com.sun.javafx.collections.ObservableListWrapper
 import javafx.application.Application
-import javafx.beans.property.ObjectProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.value.ObservableValue
 import javafx.scene.Scene
@@ -14,8 +13,6 @@ import javafx.stage.Stage
 import javafx.util.Callback
 import org.junit.Test
 import java.util.ArrayList
-import java.util.Optional
-import java.util.function.Predicate
 
 /**
  * Created by surpl on 7/14/2016.
@@ -49,19 +46,28 @@ class EditableTableViewTest:Application()
             {
                 items = ObservableListWrapper(ConstrainedList(ArrayList<String>()).apply()
                 {
-                    constraints += SimpleConstraint<List<String>>().apply()
+                    constraints += Constraint.new<List<String>>().apply()
                     {
-                        isConsistent = Predicate {change -> change.newValue.toSet().size == change.newValue.size}
+                        isConsistent = Constraint.Predicate.new()
+                        {
+                            change -> change.newValue.toSet().size == change.newValue.size
+                        }
                         description = "all entries must be unique"
                     }
-                    constraints += SimpleConstraint<List<String>>().apply()
+                    constraints += Constraint.new<List<String>>().apply()
                     {
-                        isConsistent = Predicate {change -> !change.oldValue.contains("noremove") || change.newValue.contains("noremove")}
+                        isConsistent = Constraint.Predicate.new()
+                        {
+                            change -> !change.oldValue.contains("noremove") || change.newValue.contains("noremove")
+                        }
                         description = "noremove cannot be removed"
                     }
-                    constraints += SimpleConstraint<List<String>>().apply()
+                    constraints += Constraint.new<List<String>>().apply()
                     {
-                        isConsistent = Predicate {change -> change.newValue.sorted() == change.newValue}
+                        isConsistent = Constraint.Predicate.new()
+                        {
+                            change -> change.newValue.sorted() == change.newValue
+                        }
                         description = "must be in alphabetical order"
                     }
                 })
