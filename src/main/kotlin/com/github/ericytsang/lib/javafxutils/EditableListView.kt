@@ -188,7 +188,7 @@ abstract class EditableListView<Item:Any>:ListView<Item>()
             }
             catch (ex:Exception)
             {
-                showError("Remove Entry","Unable to remove entry.",ex)
+                JavafxUtils.showErrorDialog("Remove Entry","Unable to remove entry.",ex)
             }
         }
     }
@@ -248,7 +248,7 @@ abstract class EditableListView<Item:Any>:ListView<Item>()
             items.clear()
             items.addAll(originalItems)
             selectionModel.select(positionToRemoveFrom)
-            showError("Update Entry","Unable to update entry.",ex)
+            JavafxUtils.showErrorDialog("Update Entry","Unable to update entry.",ex)
         }
     }
 
@@ -274,7 +274,7 @@ abstract class EditableListView<Item:Any>:ListView<Item>()
                 }
                 catch (ex:Exception)
                 {
-                    showError("Update Entry","Unable to update entry.",ex)
+                    JavafxUtils.showErrorDialog("Update Entry","Unable to update entry.",ex)
                 }
             }
         }
@@ -319,34 +319,8 @@ abstract class EditableListView<Item:Any>:ListView<Item>()
             }
             catch (ex:Exception)
             {
-                showError("Create Entry","Unable to create entry.",ex)
+                JavafxUtils.showErrorDialog("Create Entry","Unable to create entry.",ex)
             }
         }
-    }
-
-    private fun showError(title:String,header:String,exception:Exception)
-    {
-        val alert = Alert(Alert.AlertType.ERROR)
-        alert.title = title
-        alert.headerText = header
-        alert.contentText = exception.message
-
-        alert.dialogPane.expandableContent = TextArea().apply()
-        {
-            text = run()
-            {
-                val stringWriter = StringWriter()
-                val printWriter = PrintWriter(stringWriter)
-                exception.printStackTrace(printWriter)
-                val stackTraceString = stringWriter.toString()
-                printWriter.close()
-                stringWriter.close()
-                stackTraceString
-            }
-            isEditable = false
-            isWrapText = true
-        }
-
-        alert.showAndWait()
     }
 }
