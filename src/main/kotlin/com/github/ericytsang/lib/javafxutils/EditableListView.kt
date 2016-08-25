@@ -1,17 +1,13 @@
 package com.github.ericytsang.lib.javafxutils
 
 import javafx.event.EventHandler
-import javafx.scene.control.Alert
 import javafx.scene.control.ContextMenu
 import javafx.scene.control.Label
 import javafx.scene.control.ListView
 import javafx.scene.control.MenuItem
 import javafx.scene.control.SeparatorMenuItem
-import javafx.scene.control.TextArea
 import javafx.scene.input.KeyCode
 import java.awt.Toolkit
-import java.io.PrintWriter
-import java.io.StringWriter
 import java.util.ArrayList
 
 /**
@@ -24,7 +20,13 @@ abstract class EditableListView<Item:Any>:ListView<Item>()
 {
     /**
      * return null if the operation was cancelled by the user; returns an [Item]
-     * created as per user input otherwise.
+     * configured as per user input otherwise.
+     *
+     * if the [Item] returned is a different instance than [previousInput], then
+     * [previousInput] in [items] will be replaced with it which will cause a
+     * list change event to occur. on the other hand, if the [Item] returned
+     * is an alias of [previousInput], then the [refresh] will be called to
+     * update the interface but no list change event will occur.
      */
     protected abstract fun createOrUpdateItem(previousInput:Item?):Item?
 
@@ -260,15 +262,33 @@ abstract class EditableListView<Item:Any>:ListView<Item>()
         }
         else
         {
-            var toUpdate:Item = focusModel.focusedItem
+            val toUpdate:Item = focusModel.focusedItem
+            val updateIndex = focusModel.focusedIndex
 
             while (true)
             {
-                toUpdate = createOrUpdateItem(toUpdate) ?: focusModel.focusedItem
+                val updated = createOrUpdateItem(toUpdate) ?: toUpdate
                 try
                 {
-                    val updateIndex = focusModel.focusedIndex
-                    items[focusModel.focusedIndex] = toUpdate
+                    // if the entry we need to update is the same instance as
+                    // the updated instance, just refresh the tableview and
+                    // don't set it in the list because we don't want to trigger
+                    // a list change event.
+                    if (toUpdate === updated)
+                    {
+                        refresh()
+                    }
+
+                    // else the entry to update and the updated entry are
+                    // separate instances...replace the entry to update in the
+                    // list with the updated entry.
+                    else
+                    {
+                        items[updateIndex] = updated
+                    }
+
+                    // refocus on the update index because if we don't do this,
+                    // focus will jump back to the top of the list
                     selectionModel.select(updateIndex)
                     break
                 }
