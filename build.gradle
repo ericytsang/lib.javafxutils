@@ -26,7 +26,7 @@ repositories {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    testCompile "com.github.ericytsang:lib.constrainedlist:master-SNAPSHOT"
+    testCompile "com.github.ericytsang:lib.constrainedlist:1.0"
     testCompile "junit:junit:4.11"
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
 }
