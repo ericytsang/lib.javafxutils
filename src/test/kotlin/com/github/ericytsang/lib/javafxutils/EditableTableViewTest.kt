@@ -1,7 +1,7 @@
 package com.github.ericytsang.lib.javafxutils
 
-import com.github.ericytsang.lib.collections.ConstrainedList
-import com.github.ericytsang.lib.collections.Constraint
+import com.github.ericytsang.lib.constrainedlist.ConstrainedList
+import com.github.ericytsang.lib.constrainedlist.Constraint
 import com.sun.javafx.collections.ObservableListWrapper
 import javafx.application.Application
 import javafx.beans.property.SimpleObjectProperty

@@ -2,7 +2,7 @@ group 'com.github.ericytsang'
 version '1.0'
 
 buildscript {
-    ext.kotlin_version = '1.0.2-1'
+    ext.kotlin_version = '1.0.3'
     repositories {
         mavenCentral()
     }
@@ -26,7 +26,7 @@ repositories {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    testCompile "com.github.ericytsang:lib.collections:master-SNAPSHOT"
+    testCompile "com.github.ericytsang:lib.constrainedlist:master-SNAPSHOT"
     testCompile "junit:junit:4.11"
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
 }
